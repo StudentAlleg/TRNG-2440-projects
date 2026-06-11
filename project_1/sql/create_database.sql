@@ -1,0 +1,4 @@
+--TODO
+CREATE TABLE IF NOT EXISTS Cities (
+
+)
