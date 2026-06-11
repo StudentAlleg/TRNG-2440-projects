@@ -1,7 +1,6 @@
 """
 Location data structure
 """
-from unicodedata import name
 
 
 class Location:
@@ -21,6 +20,3 @@ class Location:
 
     def get_longitude(self):
         return self.longitude
-
-    @staticmethod
-    def from_json():

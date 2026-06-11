@@ -4,7 +4,7 @@ open-meteo api - access
 import argparse
 import json
 from typing import Any, Optional
-from location import Location
+from Location import Location
 from requests import Response
 import requests
 
@@ -34,7 +34,7 @@ def request_data(start_date: str, end_date: str, locations: list[Location], out_
     with requests.get(url=API_URL, params= params) as response:
         if out_file:
             with open(out_file, "w") as f:
-                f.write(response.json())
+                json.dump(response.json(), f)
 
 if __name__ == "__main__":
     # https://docs.python.org/3/library/argparse.html
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     locations: list[Location] = []
     with open(locations_file, "r") as f:
         locations_dict: dict[str, float] = json.load(f)
-        for name, data in locations_dict:
+        for name, data in locations_dict.items():
             locations.append(Location(name, data["latitude"], data["longitude"]))
     print("Requesting Data")
     request_data(start_date, end_date, locations, out_file)
