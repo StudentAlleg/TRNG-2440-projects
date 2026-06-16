@@ -5,12 +5,13 @@ import argparse
 import json
 from typing import Any, Optional
 from Location import Location
-from requests import Response
+import logging
 import requests
 
 API_URL: str = "https://archive-api.open-meteo.com/v1/archive"
 
-def request_data(start_date: str, end_date: str, locations: list[Location], out_file: Optional[str] = None):
+#TODO remove out file?
+def request_data(start_date: str, end_date: str, locations: list[Location], out_file: Optional[str] = None) -> dict[str, Any]:
     """
 
     :type locations: list[Location]
@@ -60,8 +61,8 @@ if __name__ == "__main__":
         locations_dict: dict[str, float] = json.load(f)
         for name, data in locations_dict.items():
             locations.append(Location(name, data["latitude"], data["longitude"]))
-    print("Requesting Data")
+    logging.info("Requesting Data")
     request_data(start_date, end_date, locations, out_file)
-    print("Data requested successfully")
+    logging.info("Data requested successfully")
     if out_file:
-        print(f"find values at {out_file}")
+        logging.info(f"find values at {out_file}")
