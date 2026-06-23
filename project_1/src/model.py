@@ -60,7 +60,7 @@ class MeteoResponse(BaseModel):
     daily_units: DailyUnits
     daily: Daily
     
-class Location:
+class Location(BaseModel):
     name: str
     latitude: float
     longitude: float

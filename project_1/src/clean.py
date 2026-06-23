@@ -11,18 +11,18 @@ from pandas import DataFrame
 from model import MeteoResponse, Location
 
 
-def from_file(filepath: str) -> pd.DataFrame:
-    with open(filepath, "r") as f:
-        return from_json(f.read())
+def from_file(api_out_path: str, locations_path: str) -> pd.DataFrame:
+    with open(api_out_path, "r") as api_out, open(locations_path, "r") as locations:
+        return from_json(api_out.read(), locations.read())
 
-def from_json(json_str: str) -> pd.DataFrame:
-    json_data: list[dict[str, Any]] = json.loads(json_str)
-    model_data: list[MeteoResponse] = []
-    for res in json_data:
-        data: MeteoResponse = MeteoResponse.model_validate(res)
-        model_data.append(data)
+def from_json(api_json_str: str, location_json_str: str) -> pd.DataFrame:
+    api_json: list[dict[str, Any]] = json.loads(api_json_str)
+    model_data: list[MeteoResponse] = [MeteoResponse.model_validate(res) for res in api_json]
 
-    return to_table(model_data)
+    location_json: list[dict[str, Any]] = json.loads(location_json_str)
+    locations: list[Location] = [Location.model_validate(location) for location in location_json]
+
+    return to_table(model_data, locations)
 
 
 def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd.DataFrame:
@@ -34,11 +34,10 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
 
     tables: list[DataFrame] = []
     for city in data:
-
+        pass
     table: DataFrame = DataFrame.fr(data)
 
     print(table)
-
 
 
 if __name__ == "__main__":
@@ -57,6 +56,6 @@ if __name__ == "__main__":
     
     with open(data_file, "r") as f:
         data: DataFrame = json.read_json(data_file)
-        to_table(Json)
+        #to_table(Json)
         to_table(data)
         print(data.columns)
