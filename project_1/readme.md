@@ -1,1 +1,1 @@
-data issues: need to split tables better, cannot just do read_json
+data issues: need to split tables better, cannot just do read_json. Needed to fix locations. Location lat/long returned was not the same as inputted (bad assumption). First tried rounding, but on double checking the data it was not the same as input (using it to match locatoin with name)

@@ -46,8 +46,8 @@ class Daily(BaseModel):
     wind_gusts_10m_max: list[float]
     sunshine_duration: list[float]
     daylight_duration: list[float]
-    sunset: datetime.datetime
-    sunrise: datetime.datetime
+    sunset: list[datetime.datetime]
+    sunrise: list[datetime.datetime]
 
 class MeteoResponse(BaseModel):
     latitude: float

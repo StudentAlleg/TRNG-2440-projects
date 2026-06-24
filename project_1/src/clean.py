@@ -32,12 +32,31 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
     :return:
     """
 
-    tables: list[DataFrame] = []
-    for city in data:
-        pass
-    table: DataFrame = DataFrame.fr(data)
+    mapped_weather_data: dict[tuple[float, float], MeteoResponse] = {(value.latitude, value.longitude): value for value in weather_data}
 
-    print(table)
+    print(mapped_weather_data.keys())
+
+    tables: list[DataFrame] = []
+    for city in city_data:
+        weather_data_key: tuple[float, float] = (city.latitude, city.longitude)
+        print(weather_data_key)
+        if weather_data_key not in mapped_weather_data:
+            print(f"no data for {weather_data_key}")
+            continue
+        w_data: MeteoResponse = mapped_weather_data[weather_data_key]
+        table: pd.DataFrame = pd.DataFrame.from_dict(w_data.daily.model_dump())
+        #TODO FIX TIME, make it a date or datetime
+        #TODO ALSO LOOK AT SUNRISE/SUNSET
+        table.insert(0, "location", [city.name for _ in range(0, len(w_data.daily.time))])
+        table.insert(1, "latitude", [w_data.latitude for _ in range(0, len(w_data.daily.time))])
+        table.insert(2,"longitude", [w_data.longitude for _ in range(0, len(w_data.daily.time))])
+
+        tables.append(table)
+
+    full_table: DataFrame = pd.concat(tables, ignore_index=True)
+    full_table.info()
+    full_table.describe()
+    return full_table
 
 
 if __name__ == "__main__":
@@ -47,15 +66,11 @@ if __name__ == "__main__":
         description="Loads data from a table"
     )
 
-    parser.add_argument("data_file")
+    parser.add_argument("api_out_file")
+    parser.add_argument("locations_file")
 
     args: argparse.Namespace = parser.parse_args()
 
-    data_file: str = args.data_file
-
-    
-    with open(data_file, "r") as f:
-        data: DataFrame = json.read_json(data_file)
-        #to_table(Json)
-        to_table(data)
-        print(data.columns)
+    data_file: str = args.api_out_file
+    location_file: str = args.locations_file
+    from_file(data_file, location_file)

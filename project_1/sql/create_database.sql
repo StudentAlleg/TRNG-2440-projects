@@ -11,7 +11,7 @@ CREATE INDEX idx_id_locations on Location (id);
 
 CREATE TABLE IF NOT EXISTS LocationData (
     location_id                 int         NOT NULL,
-    day                         timestamp   NOT NULL,
+    day                         DATE   NOT NULL,
     weather_code                int         NOT NULL,
     temperature_2m_mean         float       NOT NULL,
     temperature_2m_max          float       NOT NULL,
