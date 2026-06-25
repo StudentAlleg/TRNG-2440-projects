@@ -24,7 +24,6 @@ def from_json(api_json_str: str, location_json_str: str) -> pd.DataFrame:
 
     return to_table(model_data, locations)
 
-
 def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd.DataFrame:
     """
 
@@ -45,8 +44,7 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
             continue
         w_data: MeteoResponse = mapped_weather_data[weather_data_key]
         table: pd.DataFrame = pd.DataFrame.from_dict(w_data.daily.model_dump())
-        #TODO FIX TIME, make it a date or datetime
-        #TODO ALSO LOOK AT SUNRISE/SUNSET
+        
         table.insert(0, "location", [city.name for _ in range(0, len(w_data.daily.time))])
         table.insert(1, "latitude", [w_data.latitude for _ in range(0, len(w_data.daily.time))])
         table.insert(2,"longitude", [w_data.longitude for _ in range(0, len(w_data.daily.time))])
@@ -57,6 +55,17 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
     full_table.info()
     full_table.describe()
     return full_table
+
+def clean(df: DataFrame) -> DataFrame:
+    """
+    Cleand the given dataframe, expects it to look like one from to_table
+    :param df: 
+    :return: 
+    """
+    df["time"] = pd.to_datetime(df["time"], utc=True)
+    df["sunset"] = pd.to_datetime(df["sunset"], utc=True)
+    df["sunrise"] = pd.to_datetime(df["sunrise"], utc=True)
+    return df
 
 
 if __name__ == "__main__":
@@ -73,4 +82,7 @@ if __name__ == "__main__":
 
     data_file: str = args.api_out_file
     location_file: str = args.locations_file
-    from_file(data_file, location_file)
+    dataframe: DataFrame = clean(from_file(data_file, location_file))
+
+    print("""SAMPLE""")
+    print(dataframe.head(5).to_string())
