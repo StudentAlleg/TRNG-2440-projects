@@ -1,19 +1,41 @@
 """
 open-meteo api - access
 """
+import os
 import argparse
 import json
 from typing import Any, Optional
-from Location import Location
 import logging
 import requests
 
+from src.model import Location, DailyUnits
+
 API_URL: str = "https://archive-api.open-meteo.com/v1/archive"
 
-#TODO remove out file?
-def request_data(start_date: str, end_date: str, locations: list[Location], out_file: Optional[str] = None) -> dict[str, Any]:
-    """
+def extract(start_date: str = "2026-05-01",
+            end_date: str = "2026-06-01",
+            locations_file: str = os.path.join(os.path.dirname(__file__), "..", "data", "locations.json"),
+            out_file: str = os.path.join(os.path.dirname(__file__), "..", "data", "api_out.json")
+            ) -> None:
 
+    locations: list[Location] = []
+    
+    with open(locations_file, "r") as f:
+        locations_dict: list[dict[str, Any]] = json.load(f)
+        for location_data in locations_dict:
+            locations.append(Location.model_validate(location_data))
+    logging.info("Requesting Data")
+    request_data(start_date, end_date, locations, out_file)
+    
+    request_data(start_date, end_date, locations, out_file)
+    logging.info("Data requested successfully")
+    logging.info(f"find values at {out_file}")
+    
+
+#TODO remove out file?
+def request_data(start_date: str, end_date: str, locations: list[Location], out_file: str) -> None:
+    """
+    Requests the data ans stores it in out_file
     :type locations: list[Location]
     :param locations: list of locations
     :param start_date: YYYY-MM-DD
@@ -21,9 +43,9 @@ def request_data(start_date: str, end_date: str, locations: list[Location], out_
     :return:
     """
     #TODO FIX LOCATIONS, SCHEMA CHANGE
-    daily_params: list[str] = ["weather_code", "temperature_2m_mean", "temperature_2m_max", "temperature_2m_min", "apparent_temperature_mean", "apparent_temperature_max", "apparent_temperature_min", "precipitation_sum", "rain_sum", "snowfall_sum", "precipitation_hours", "wind_speed_10m_max", "wind_direction_10m_dominant", "shortwave_radiation_sum", "et0_fao_evapotranspiration", "wind_gusts_10m_max", "sunshine_duration", "daylight_duration", "sunset", "sunrise"]
-    latitudes: list[str] = [location.get_latitude() for location in locations]
-    longitudes: list[str] = [location.get_longitude() for location in locations]
+    daily_params: list[str] = list(DailyUnits.model_fields.keys())
+    latitudes: list[float] = [location.latitude for location in locations]
+    longitudes: list[float] = [location.longitude for location in locations]
 
     params: dict[str, Any] = {
         "latitude": latitudes,
@@ -34,9 +56,8 @@ def request_data(start_date: str, end_date: str, locations: list[Location], out_
     }
 
     with requests.get(url=API_URL, params= params) as response:
-        if out_file:
-            with open(out_file, "w") as f:
-                json.dump(response.json(), f)
+        with open(out_file, "w") as f:
+            json.dump(response.json(), f)
 
 if __name__ == "__main__":
     # https://docs.python.org/3/library/argparse.html

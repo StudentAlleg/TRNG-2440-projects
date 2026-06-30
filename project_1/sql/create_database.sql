@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS Location (
 CREATE INDEX idx_latlong_locations on Location (latitude, longitude);
 CREATE INDEX idx_id_locations on Location (id);
 
-CREATE TABLE IF NOT EXISTS LocationData (
+CREATE TABLE IF NOT EXISTS Weather (
     location_id                 int         NOT NULL,
     day                         DATE   NOT NULL,
     weather_code                int         NOT NULL,
@@ -38,5 +38,5 @@ CREATE TABLE IF NOT EXISTS LocationData (
     REFERENCES Location(id)
 );
 
-CREATE INDEX idx_location_locationdata on LocationData (id);
-CREATE INDEX idx_day_locationdata on Locations (id);
+CREATE INDEX idx_location_weather on Weather(id);
+CREATE INDEX idx_day_weather on Weather(day);

@@ -2,6 +2,8 @@ import datetime
 from datetime import date
 
 from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
+
 
 class DailyUnits(BaseModel):
     time: str
@@ -64,3 +66,35 @@ class Location(BaseModel):
     name: str
     latitude: float
     longitude: float
+    
+@dataclass
+class LocationRecord:
+    location_id: int
+    name: str
+    latitude: float
+    longitude: float
+    
+
+class WeatherRecord(BaseModel):
+    location_id: int
+    day: datetime.date
+    weather_code: int
+    temperature_2m_mean: float
+    temperature_2m_max: float
+    temperature_2m_min: float
+    apparent_temperature_mean: float
+    apparent_temperature_max: float
+    apparent_temperature_min: float
+    precipitation_sum: float
+    rain_sum: float
+    snowfall_sum: float
+    precipitation_hours: float
+    wind_speed_10m_max: float
+    wind_direction_10m_dominant: float
+    shortwave_radiation_sum: float
+    et0_fao_evapotranspiration: float
+    wind_gusts_10m_max: float
+    sunshine_duration: float
+    daylight_duration: float
+    sunset: datetime.datetime
+    sunrise: datetime.datetime

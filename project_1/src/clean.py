@@ -54,8 +54,9 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
     full_table: DataFrame = pd.concat(tables, ignore_index=True)
     full_table.info()
     full_table.describe()
-    return full_table
+    return clean(full_table)
 
+#TODO transform this into the "exported" function, probably 2 (clean_location, clean_weather) to pass to load.
 def clean(df: DataFrame) -> DataFrame:
     """
     Cleand the given dataframe, expects it to look like one from to_table
@@ -82,7 +83,7 @@ if __name__ == "__main__":
 
     data_file: str = args.api_out_file
     location_file: str = args.locations_file
-    dataframe: DataFrame = clean(from_file(data_file, location_file))
+    dataframe: DataFrame = from_file(data_file, location_file)
 
     print("""SAMPLE""")
     print(dataframe.head(5).to_string())
