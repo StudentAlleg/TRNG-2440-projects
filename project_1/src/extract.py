@@ -1,14 +1,14 @@
 """
 open-meteo api - access
 """
-import os
 import argparse
 import json
-from typing import Any, Optional
 import logging
-import requests
+import os
+from typing import Any, Optional
 
-from src.model import Location, DailyUnits
+import requests
+from src.model import DailyUnits, Location
 
 API_URL: str = "https://archive-api.open-meteo.com/v1/archive"
 

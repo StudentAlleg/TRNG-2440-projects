@@ -3,7 +3,7 @@ Handles database connection and upload
 """
 import os
 from contextlib import contextmanager
-from typing import Generator, Any
+from typing import Any, Generator
 
 import psycopg
 from psycopg import Connection, Cursor

@@ -1,7 +1,6 @@
 from typing import Optional
 
 from psycopg import ProgrammingError
-
 from src.dao.dao import Dao
 from src.database import Database
 from src.model import WeatherRecord

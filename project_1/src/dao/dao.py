@@ -3,7 +3,6 @@ from contextlib import _GeneratorContextManager
 from typing import Optional
 
 from psycopg import Cursor
-
 from src.database import Database
 
 

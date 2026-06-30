@@ -1,10 +1,9 @@
 from typing import Optional
 
 from psycopg import ProgrammingError
-
 from src.dao.dao import Dao
 from src.database import Database
-from src.model import LocationRecord, Location
+from src.model import Location, LocationRecord
 
 
 class LocationDao(Dao[int, LocationRecord]):

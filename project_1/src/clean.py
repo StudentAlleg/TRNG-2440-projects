@@ -1,14 +1,13 @@
 """
 Class for cleaning and formatting data
 """
-from typing import Any
-
 import argparse
 import json
-import pandas as pd
-from pandas import DataFrame
+from typing import Any
 
-from model import MeteoResponse, Location
+import pandas as pd
+from model import Location, MeteoResponse
+from pandas import DataFrame
 
 
 def from_file(api_out_path: str, locations_path: str) -> pd.DataFrame:
