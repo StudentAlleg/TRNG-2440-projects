@@ -9,7 +9,7 @@ import psycopg
 from psycopg import Connection, Cursor
 from psycopg.rows import Row, class_row
 
-
+#TODO pooling and connection handling
 #https://www.psycopg.org/articles/2026/06/24/pydantic-fastapi/
 class Database:
     def __init__(self):

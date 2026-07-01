@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 import pandas as pd
-from model import Location, MeteoResponse
+from src.model import Location, MeteoResponse
 from pandas import DataFrame
 
 
@@ -53,15 +53,18 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
     full_table: DataFrame = pd.concat(tables, ignore_index=True)
     full_table.info()
     full_table.describe()
-    return clean(full_table)
+    return full_table
 
 #TODO transform this into the "exported" function, probably 2 (clean_location, clean_weather) to pass to load.
-def clean(df: DataFrame) -> DataFrame:
+def clean(api_out_path: str, locations_path: str) -> DataFrame:
     """
-    Cleand the given dataframe, expects it to look like one from to_table
+    Cleans the given dataframe, expects it to look like one from to_table
+    Returns a table that has the following columns: location, latitude, longitude, (then the rest of the daily columns)
     :param df: 
     :return: 
     """
+
+    df: DataFrame = from_file(api_out_path, locations_path)
     df["time"] = pd.to_datetime(df["time"], utc=True)
     df["sunset"] = pd.to_datetime(df["sunset"], utc=True)
     df["sunrise"] = pd.to_datetime(df["sunrise"], utc=True)
