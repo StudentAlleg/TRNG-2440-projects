@@ -31,12 +31,16 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
+    database: Database = Database()
+    # create the tables
+    with database.get_connection() as conn, open(os.path.join(os.path.dirname(__file__), "sql", "create_database.sql"), "r") as ct:
+        conn.execute(ct.read())
     if not args.no_extract:
         extract(start_date=args.start_date, end_date=args.end_date, locations_file=args.location_file, out_file=args.out_file)
         logging.info("Data extracted")
     dataframe: DataFrame = clean(api_out_path=args.out_file, locations_path=args.location_file)
     logging.info("Data cleaned")
-    load(dataframe=dataframe, database=Database())
+    load(dataframe=dataframe, database=database)
     logging.info("Data loaded successfully")
 
 

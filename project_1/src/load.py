@@ -26,5 +26,4 @@ def load(dataframe: DataFrame, database: Database) -> None:
     weather = [WeatherRecord.model_validate(row) for row in weather_table.to_dict(orient="records")]
     for data in weather:
         weather_dao.save(record=data)
-    return
     

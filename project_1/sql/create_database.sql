@@ -1,13 +1,14 @@
 CREATE TABLE IF NOT EXISTS Location (
-    id          int           AUTO_INCREMENT PRIMARY KEY,
-    name        VARCHAR(32)        NOT NULL,
-    latitude    DOUBLE             NOT NULL,
-    longitude   DOUBLE             NOT NULL,
+    location_id     SERIAL              PRIMARY KEY,
+    name            VARCHAR(32)         NOT NULL,
+    latitude        FLOAT               NOT NULL,
+    longitude       FLOAT               NOT NULL,
     UNIQUE(latitude, longitude)
 );
 
-CREATE INDEX idx_latlong_locations on Location (latitude, longitude);
-CREATE INDEX idx_id_locations on Location (id);
+
+--CREATE INDEX idx_latlong_locations on Location (latitude, longitude);
+--CREATE INDEX idx_id_locations on Location(location_id);
 
 CREATE TABLE IF NOT EXISTS Weather (
     location_id                 int         NOT NULL,
@@ -35,8 +36,8 @@ CREATE TABLE IF NOT EXISTS Weather (
     PRIMARY KEY (location_id, day),
     CONSTRAINT FK_location_id
     FOREIGN KEY (location_id)
-    REFERENCES Location(id)
+    REFERENCES Location(location_id)
 );
 
-CREATE INDEX idx_location_weather on Weather(id);
-CREATE INDEX idx_day_weather on Weather(day);
+--CREATE INDEX idx_location_weather on Weather(location_id);
+--CREATE INDEX idx_day_weather on Weather(day);

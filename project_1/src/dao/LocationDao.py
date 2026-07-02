@@ -37,13 +37,12 @@ class LocationDao(Dao[int, LocationRecord]):
                 raise ValueError("If record is None, location must not be None")
             record = LocationRecord(location_id = -1, name=location.name, latitude=location.latitude, longitude=location.longitude)
         with self.get_cursor() as cursor:
-            #TODO figure out what this does with conflicts
             update: str = """
             INSERT INTO Location(location_id, name, latitude, longitude) VALUES (DEFAULT, %s, %s, %s)
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (latitude, longitude) DO UPDATE SET name = EXCLUDED.name
             RETURNING location_id, name, latitude, longitude
             """
-            cursor.execute(update, (record.location_id, record.name, record.latitude, record.longitude))
+            cursor.execute(update, (record.name, record.latitude, record.longitude))
             return next(cursor)
 
     def update(self, record: Optional[LocationRecord] = None, **kwargs) -> Optional[LocationRecord]:

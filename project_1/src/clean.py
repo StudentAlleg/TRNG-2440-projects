@@ -1,6 +1,7 @@
 """
 Class for cleaning and formatting data
 """
+import logging
 import argparse
 import json
 from typing import Any
@@ -32,14 +33,11 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
 
     mapped_weather_data: dict[tuple[float, float], MeteoResponse] = {(value.latitude, value.longitude): value for value in weather_data}
 
-    print(mapped_weather_data.keys())
-
     tables: list[DataFrame] = []
     for city in city_data:
         weather_data_key: tuple[float, float] = (city.latitude, city.longitude)
-        print(weather_data_key)
         if weather_data_key not in mapped_weather_data:
-            print(f"no data for {weather_data_key}")
+            logging.warning(f"no data for {weather_data_key}")
             continue
         w_data: MeteoResponse = mapped_weather_data[weather_data_key]
         table: pd.DataFrame = pd.DataFrame.from_dict(w_data.daily.model_dump())
@@ -51,8 +49,8 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
         tables.append(table)
 
     full_table: DataFrame = pd.concat(tables, ignore_index=True)
-    full_table.info()
-    full_table.describe()
+    #full_table.info()
+    #full_table.describe()
     return full_table
 
 #TODO transform this into the "exported" function, probably 2 (clean_location, clean_weather) to pass to load.
@@ -66,6 +64,7 @@ def clean(api_out_path: str, locations_path: str) -> DataFrame:
 
     df: DataFrame = from_file(api_out_path, locations_path)
     df["time"] = pd.to_datetime(df["time"], utc=True)
+    df.rename(columns={"time": "day"}, inplace=True)
     df["sunset"] = pd.to_datetime(df["sunset"], utc=True)
     df["sunrise"] = pd.to_datetime(df["sunrise"], utc=True)
     return df
