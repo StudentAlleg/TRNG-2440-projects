@@ -67,7 +67,6 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
     #full_table.describe()
     return full_table
 
-#TODO transform this into the "exported" function, probably 2 (clean_location, clean_weather) to pass to load.
 def clean(api_out_path: str, locations_path: str) -> DataFrame:
     """
     Creates and cleans the data from the specified paths.

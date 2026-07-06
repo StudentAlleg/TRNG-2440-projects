@@ -17,6 +17,14 @@ def extract(start_date: str = "2026-05-01",
             locations_file: str = os.path.join(os.path.dirname(__file__), "..", "data", "locations.json"),
             out_file: str = os.path.join(os.path.dirname(__file__), "..", "data", "api_out.json")
             ) -> None:
+    """
+    Extracts data from the open-meteo API for the given locations and saves it to the out_file
+    :param start_date: 
+    :param end_date: 
+    :param locations_file: 
+    :param out_file: 
+    :return: 
+    """
 
     locations: list[Location] = []
     
@@ -32,10 +40,9 @@ def extract(start_date: str = "2026-05-01",
     logging.info(f"find values at {out_file}")
     
 
-#TODO remove out file?
 def request_data(start_date: str, end_date: str, locations: list[Location], out_file: str) -> None:
     """
-    Requests the data ans stores it in out_file
+    Requests the data and stores it in out_file
     :type locations: list[Location]
     :param locations: list of locations
     :param start_date: YYYY-MM-DD
@@ -59,6 +66,9 @@ def request_data(start_date: str, end_date: str, locations: list[Location], out_
             json.dump(response.json(), f)
 
 if __name__ == "__main__":
+    """
+    Runs the extract stage
+    """
     # https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser(
         prog="Open Meteo API",
@@ -75,15 +85,10 @@ if __name__ == "__main__":
     start_date: str = args.start_date
     end_date: str = args.end_date
     locations_file: str = args.locations_file
-    out_file: Optional[str] = args.out_file if args.out_file != "" else None
+    out_file: str = args.out_file
 
-    locations: list[Location] = []
-    with open(locations_file, "r") as f:
-        locations_dict: dict[str, float] = json.load(f)
-        for name, data in locations_dict.items():
-            locations.append(Location(name, data["latitude"], data["longitude"]))
     logging.info("Requesting Data")
-    request_data(start_date, end_date, locations, out_file)
+    extract(start_date, end_date, locations_file, out_file)
     logging.info("Data requested successfully")
     if out_file:
         logging.info(f"find values at {out_file}")
