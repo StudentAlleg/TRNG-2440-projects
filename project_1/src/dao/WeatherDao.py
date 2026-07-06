@@ -1,3 +1,7 @@
+"""
+Defines the WeatherDAO class and related utility constants
+"""
+
 from typing import Optional
 
 from psycopg import ProgrammingError
@@ -9,7 +13,9 @@ WEATHER_COLUMNS: list[str] = list(WeatherRecord.model_fields.keys())
 WEATHER_UPDATE_COLUMNS: list[str] = [c for c in WEATHER_COLUMNS if c not in ("location_id", "day")]
 
 class WeatherDao(Dao[int, WeatherRecord]):
-
+    """
+    Class for interacting with the Weather table
+    """
     def __init__(self, database: Database = Database()) -> None:
         super().__init__(WeatherRecord, database)
 
@@ -48,7 +54,18 @@ class WeatherDao(Dao[int, WeatherRecord]):
             return next(cursor)
 
     def update(self, record: Optional[WeatherRecord] = None, **kwargs) -> Optional[WeatherRecord]:
+        """
+        Not implemented
+        :param record:
+        :param kwargs:
+        :return:
+        """
         raise NotImplementedError
 
     def delete(self, record_id: int) -> Optional[WeatherRecord]:
+        """
+        Not implemented
+        :param record_id:
+        :return:
+        """
         raise NotImplementedError

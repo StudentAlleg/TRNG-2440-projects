@@ -1,5 +1,6 @@
 """
 Class for cleaning and formatting data
+Has a utlity to clean/test clean data when run as main
 """
 import logging
 import argparse
@@ -12,10 +13,22 @@ from pandas import DataFrame
 
 
 def from_file(api_out_path: str, locations_path: str) -> pd.DataFrame:
+    """
+    Creates a dataframe from an api file path and a locations file path
+    :param api_out_path:
+    :param locations_path:
+    :return:
+    """
     with open(api_out_path, "r") as api_out, open(locations_path, "r") as locations:
         return from_json(api_out.read(), locations.read())
 
 def from_json(api_json_str: str, location_json_str: str) -> pd.DataFrame:
+    """
+    Creates a dataframe from the weather api json string and the location json string
+    :param api_json_str:
+    :param location_json_str:
+    :return:
+    """
     api_json: list[dict[str, Any]] = json.loads(api_json_str)
     model_data: list[MeteoResponse] = [MeteoResponse.model_validate(res) for res in api_json]
 
@@ -26,9 +39,10 @@ def from_json(api_json_str: str, location_json_str: str) -> pd.DataFrame:
 
 def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd.DataFrame:
     """
-
-    :param data:
-    :return:
+    Creates a dataframe from the weather data and city data. Ensures only weather data that have a corresponding location exists
+    :param weather_data: the weather data
+    :param city_data: the location data
+    :return: the created dataframe
     """
 
     mapped_weather_data: dict[tuple[float, float], MeteoResponse] = {(value.latitude, value.longitude): value for value in weather_data}
@@ -56,9 +70,10 @@ def to_table(weather_data: list[MeteoResponse], city_data: list[Location]) -> pd
 #TODO transform this into the "exported" function, probably 2 (clean_location, clean_weather) to pass to load.
 def clean(api_out_path: str, locations_path: str) -> DataFrame:
     """
-    Cleans the given dataframe, expects it to look like one from to_table
+    Creates and cleans the data from the specified paths.
     Returns a table that has the following columns: location, latitude, longitude, (then the rest of the daily columns)
-    :param df: 
+    :param api_out_path: the path to the api output file
+    :param locations_path: the path to the locations file
     :return: 
     """
 
@@ -71,6 +86,9 @@ def clean(api_out_path: str, locations_path: str) -> DataFrame:
 
 
 if __name__ == "__main__":
+    """
+    Cleans and returns a sample of the data
+    """
     # https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser(
         prog="Loads data to a json table",

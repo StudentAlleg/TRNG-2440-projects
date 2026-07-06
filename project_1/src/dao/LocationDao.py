@@ -1,3 +1,7 @@
+"""
+Defines the LocationDao class
+"""
+
 from typing import Optional
 
 from psycopg import ProgrammingError
@@ -7,7 +11,9 @@ from src.model import Location, LocationRecord
 
 
 class LocationDao(Dao[int, LocationRecord]):
-
+    """
+    Class for interacting with the Location table in the database. Inherits from Dao[int, LocationRecord]
+    """
     def __init__(self, database: Database = Database()) -> None:
         super().__init__(LocationRecord, database)
 
@@ -46,7 +52,18 @@ class LocationDao(Dao[int, LocationRecord]):
             return next(cursor)
 
     def update(self, record: Optional[LocationRecord] = None, **kwargs) -> Optional[LocationRecord]:
+        """
+        Not implemented
+        :param record:
+        :param kwargs:
+        :return:
+        """
         raise NotImplementedError
 
     def delete(self, record_id: int) -> Optional[LocationRecord]:
+        """
+        Not implemented
+        :param record_id:
+        :return:
+        """
         raise NotImplementedError
