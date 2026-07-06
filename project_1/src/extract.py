@@ -42,7 +42,6 @@ def request_data(start_date: str, end_date: str, locations: list[Location], out_
     :param end_date: YYYY-MM-DD
     :return:
     """
-    #TODO FIX LOCATIONS, SCHEMA CHANGE
     daily_params: list[str] = list(DailyUnits.model_fields.keys())
     latitudes: list[float] = [location.latitude for location in locations]
     longitudes: list[float] = [location.longitude for location in locations]
