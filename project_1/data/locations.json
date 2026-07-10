@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Martinez",
+    "latitude": 38.066784,
+    "longitude": -122.09961
+  },
+  {
+    "name": "Roseville",
+    "latitude": 38.76977,
+    "longitude": -121.30969
+  },
+  {
+    "name": "Davis",
+    "latitude": 38.488575,
+    "longitude": -121.750336
+  },
+  {
+    "name": "San Jose",
+    "latitude": 37.363796,
+    "longitude": -121.91234
+  }
+]

@@ -1,0 +1,41 @@
+Table Location {
+  location_id serial [pk]
+  name varchar(32) [not null]
+  latitude float [not null]
+  longitude float [not null]
+
+  indexes {
+    (latitude, longitude) [unique]
+  }
+}
+
+Table Weather {
+  location_id int [not null]
+  day date [not null]
+  weather_code int [not null]
+  temperature_2m_mean float [not null]
+  temperature_2m_max float [not null]
+  temperature_2m_min float [not null]
+  apparent_temperature_mean float [not null]
+  apparent_temperature_max float [not null]
+  apparent_temperature_min float [not null]
+  precipitation_sum float [not null]
+  rain_sum float [not null]
+  snowfall_sum float [not null]
+  precipitation_hours float [not null]
+  wind_speed_10m_max float [not null]
+  wind_direction_10m_dominant float [not null]
+  shortwave_radiation_sum float [not null]
+  et0_fao_evapotranspiration float [not null]
+  wind_gusts_10m_max float [not null]
+  sunshine_duration float [not null]
+  daylight_duration float [not null]
+  sunset timestamp [not null]
+  sunrise timestamp [not null]
+
+  indexes {
+    (location_id, day) [pk]
+  }
+}
+
+Ref FK_location_id: Weather.location_id > Location.location_id
