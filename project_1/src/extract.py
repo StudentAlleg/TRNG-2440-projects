@@ -34,8 +34,6 @@ def extract(start_date: str = "2026-05-01",
             locations.append(Location.model_validate(location_data))
     logging.info("Requesting Data")
     request_data(start_date, end_date, locations, out_file)
-    
-    request_data(start_date, end_date, locations, out_file)
     logging.info("Data requested successfully")
     logging.info(f"find values at {out_file}")
     
@@ -49,7 +47,7 @@ def request_data(start_date: str, end_date: str, locations: list[Location], out_
     :param end_date: YYYY-MM-DD
     :return:
     """
-    daily_params: list[str] = list(DailyUnits.model_fields.keys())
+    daily_params: list[str] = [key for key in DailyUnits.model_fields.keys() if key != "time"]
     latitudes: list[float] = [location.latitude for location in locations]
     longitudes: list[float] = [location.longitude for location in locations]
 
@@ -60,6 +58,7 @@ def request_data(start_date: str, end_date: str, locations: list[Location], out_
         "end_date": end_date,
         "daily": daily_params
     }
+    logging.info("Extracting with params " +str(params))
 
     with requests.get(url=API_URL, params= params) as response:
         with open(out_file, "w") as f:

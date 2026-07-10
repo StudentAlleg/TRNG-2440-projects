@@ -5,12 +5,15 @@ SELECT day, name, apparent_temperature_max
           Location.name,
           Weather.day,
           Weather.apparent_temperature_max,
-          RANK() OVER (PARTITION BY Weather.day ORDER BY Weather.apparent_temperature_max DESC) AS rnk
+          RANK() OVER
+            (PARTITION BY Weather.day
+            ORDER BY Weather.apparent_temperature_max DESC)
+            AS rnk
       FROM Weather
       JOIN Location ON Weather.location_id = Location.location_id
   )
   WHERE rnk = 1
-  ;
+;
 
 --Rainfall from the previous 7 days, plus current rain sum for that day
 
@@ -27,14 +30,17 @@ ORDER BY Weather.day ASC, Location.latitude ASC
 
 --total daylight per day per location,
 --https://collectingwisdom.com/postgresql-convert-seconds-to-hhmmss/
-SELECT Location.name, Weather.day, Weather.sunset - Weather.sunrise as total_daylight, Weather.sunshine_duration * interval '1 sec' AS sunshine_time, Weather.daylight_duration * interval '1 sec' AS daylight_time FROM Weather
+SELECT Location.name, Weather.day, Weather.sunset - Weather.sunrise as total_daylight,
+Weather.sunshine_duration * interval '1 sec' AS sunshine_time, Weather.daylight_duration * interval '1 sec' AS daylight_time
+FROM Weather
 JOIN Location
     ON Weather.location_id = Location.location_id
 ORDER BY Weather.day ASC, Location.latitude ASC
 ;
 
 --total precipitation hours and total rain_fall
-SELECT Location.name, SUM(Weather.precipitation_hours) as total_precipitation_hours, SUM(Weather.rain_sum) as total_rain_sum FROM Weather
+SELECT Location.name, SUM(Weather.precipitation_hours) as total_precipitation_hours, SUM(Weather.rain_sum) as total_rain_sum
+FROM Weather
 JOIN Location
     ON Weather.location_id = Location.location_id
 GROUP BY Location.location_id, Location.name
