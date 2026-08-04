@@ -1,0 +1,12 @@
+# Local Spark environment  ->  python -m venv .venv-local
+# Python 3.12.  Java 17 or 21.  Includes the test/lint tools.
+# NOTE: pyspark and databricks-connect must never be installed together.
+python-dotenv==1.0.1
+confluent-kafka==2.6.1
+databricks-sdk==0.38.0
+
+pyspark==3.5.5
+delta-spark==3.3.0
+
+pytest==8.3.4
+ruff==0.8.6
