@@ -104,33 +104,4 @@ broker on this host.
 pytest
 ```
 
-`tests/test_stack.py` spins up a real local Spark + Delta session and writes a Delta table. Run it
-first — if it passes, the environment is sound and every later failure is your logic.
-
-## What's scaffolded vs. what's yours to write
-
-Plumbing is done and runnable: `config` / `session` (the mode switch), `medallion/bronze.py`, `events.py`,
-`kafka_io.py`, `sql_checks.py`, the compose file, the pytest fixtures, and dependency management.
-
-Everything below is a stub with the requirement numbers it covers written into the comments:
-
-| File | Contains |
-| --- | --- |
-| `medallion/silver.py` | 4 functions raising `NotImplementedError` (B.2–B.12) |
-| `medallion/gold.py` | 4 functions raising `NotImplementedError` (B.14, C) |
-| `sql/*.sql` | `SELECT 1` placeholders + notes (D.1–D.6) |
-| `sql/checks/*.sql` | zero-rows-means-pass contract + notes (D.7) |
-| `dags/retailpulse_weekly_orchestration.py` | correct task graph and schedule, all six tasks are `EmptyOperator` (F) |
-
-Also outstanding: the Databricks notebooks for the submission checklist (keep them thin — import from
-`retailpulse` and call the same functions), the Databricks job definition, and the validation report
-comparing input / rejected / processed row counts.
-
-## Mode reference
-
-|                | `local`                                       | `databricks`                                        |
-| -------------- | --------------------------------------------- | --------------------------------------------------- |
-| Session        | `SparkSession` + Delta extensions             | `DatabricksSession.builder.serverless()`            |
-| Raw input      | `datasets/*.csv`                              | `/Volumes/<catalog>/retail_fresher/retail_raw/*.csv` |
-| Tables         | `spark_catalog.retail_fresher.<name>`         | `<catalog>.retail_fresher.<name>`                   |
-| Orchestration  | run `python -m retailpulse.medallion.<layer>`           | Airflow → Databricks Job                            |
+`tests/test_stack.py` spins up a real local Spark + Delta session and writes a Delta table.

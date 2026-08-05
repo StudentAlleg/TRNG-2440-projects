@@ -54,6 +54,16 @@ def _local_session(cfg: RunConfig) -> SparkSession:
 
 
 def _databricks_session() -> SparkSession:
+    # Inside a Databricks notebook or job the runtime has already built the
+    # session and databricks-connect is not installed, so reuse what's there.
+    # Only a remote client (this laptop) has to open a Connect session, and it
+    # has no active session on the first call -- which makes this the check,
+    # rather than sniffing at DATABRICKS_RUNTIME_VERSION, whose presence on
+    # serverless the docs do not actually promise.
+    active = SparkSession.getActiveSession()
+    if active is not None:
+        return active
+
     from databricks.connect import DatabricksSession
 
     builder = DatabricksSession.builder

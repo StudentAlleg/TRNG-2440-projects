@@ -24,6 +24,18 @@ log = logging.getLogger("silver")
 LINEAGE_COLUMNS = ("source_file", "ingestion_timestamp")
 
 
+def _try_cast(column_name: str, data_type: str) -> Column:
+    """Cast a raw Bronze string, turning malformed values into NULL.
+
+    Databricks enables ANSI SQL, where casting junk ('NA', '') to a number
+    raises CAST_INVALID_INPUT rather than returning NULL; local OSS Spark
+    defaults to ANSI off and returns NULL.  Every column cast here is filtered
+    on null or on a range immediately afterwards, so NULL is the behaviour we
+    want -- saying `try_cast` gets it from both engines instead of one.
+    """
+    return F.expr(f"try_cast(`{column_name}` AS {data_type})")
+
+
 def _normalize_strings(dataframe: DataFrame, *column_names: str) -> DataFrame:
     column_dict: dict[str, Column] = {name: F.initcap(F.trim(F.lower(F.col(name)))) for name in column_names}
     dataframe = dataframe.withColumns(column_dict)
@@ -47,12 +59,12 @@ def clean_customers(bronze_customers: DataFrame) -> DataFrame:
                                           )
     bronze_customers = bronze_customers.withColumns({
         #dates
-        "signup_date": F.to_date(F.col("signup_date")),
-        "date_of_birth": F.to_date(F.col("date_of_birth")),
+        "signup_date": _try_cast("signup_date", "date"),
+        "date_of_birth": _try_cast("date_of_birth", "date"),
         #timestamp
-        "updated_at": F.to_timestamp(F.col("updated_at")),
+        "updated_at": _try_cast("updated_at", "timestamp"),
         #int
-        "loyalty_points": F.col("loyalty_points").cast("int")
+        "loyalty_points": _try_cast("loyalty_points", "int"),
     })
     window: WindowSpec = Window.partitionBy("customer_id").orderBy(F.col("updated_at").desc())
 
@@ -78,9 +90,9 @@ def clean_products(bronze_products: DataFrame) -> DataFrame:
                                          "subcategory",
                                          "supplier_name")
     bronze_products = bronze_products.withColumns({
-        "unit_price": F.col("unit_price").cast("decimal(12,2)"),
-        "cost_price": F.col("cost_price").cast("decimal(12,2)"),
-        "stock_quantity": F.col("stock_quantity").cast("int")
+        "unit_price": _try_cast("unit_price", "decimal(12,2)"),
+        "cost_price": _try_cast("cost_price", "decimal(12,2)"),
+        "stock_quantity": _try_cast("stock_quantity", "int"),
     })
 
     bronze_products = bronze_products.dropna(subset=["unit_price", "cost_price"])
@@ -97,11 +109,11 @@ def clean_orders(bronze_orders: DataFrame) -> DataFrame:
     PENDING and CANCELLED orders.
     """
     bronze_orders = bronze_orders.withColumns({
-        "order_timestamp": F.to_timestamp(F.col("order_timestamp")),
-        "promised_delivery_date": F.to_date(F.col("promised_delivery_date")),
-        "actual_delivery_date": F.to_date(F.col("actual_delivery_date")),
-        "quantity": F.col("quantity").cast("int"),
-        "discount_pct": F.col("discount_pct").cast("decimal(5,2)")
+        "order_timestamp": _try_cast("order_timestamp", "timestamp"),
+        "promised_delivery_date": _try_cast("promised_delivery_date", "date"),
+        "actual_delivery_date": _try_cast("actual_delivery_date", "date"),
+        "quantity": _try_cast("quantity", "int"),
+        "discount_pct": _try_cast("discount_pct", "decimal(5,2)"),
     })
 
     bronze_orders = bronze_orders.filter((F.col("quantity") > 0) & (~F.col("order_status").isin(["PENDING", "CANCELLED"])))
