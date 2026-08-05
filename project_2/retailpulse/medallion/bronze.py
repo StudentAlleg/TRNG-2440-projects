@@ -12,7 +12,7 @@ from typing import Optional
 from pyspark.context import SparkContext
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.connect.session import SparkSession
+from pyspark.sql.session import SparkSession
 
 from ..config import RAW_FILES, RunConfig, load_config
 from ..session import cli, ensure_namespace, get_spark, save

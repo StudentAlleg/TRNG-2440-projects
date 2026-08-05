@@ -26,6 +26,10 @@ def _local_session(cfg: RunConfig) -> SparkSession:
     from delta import configure_spark_with_delta_pip
     from pyspark.sql import SparkSession
 
+    os.environ.setdefault("HADOOP_HOME", "C:\\hadoop")
+    os.environ["PATH"] = (
+        os.environ.get("PATH", "") + ";" + os.path.join(os.environ["HADOOP_HOME"], "bin")
+    )
     cfg.local_warehouse.mkdir(parents=True, exist_ok=True)
     derby_home = cfg.local_warehouse.parent / "metastore_db"
 

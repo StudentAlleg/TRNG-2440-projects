@@ -19,6 +19,11 @@ from ..session import cli, get_spark, save_all
 
 log = logging.getLogger("silver")
 
+# Bronze stamps these onto every table (A.6), so all three frames carry them into
+# the join.  Keep the order-level pair and drop the dimension copies.
+LINEAGE_COLUMNS = ("source_file", "ingestion_timestamp")
+
+
 def _normalize_strings(dataframe: DataFrame, *column_names: str) -> DataFrame:
     column_dict: dict[str, Column] = {name: F.initcap(F.trim(F.lower(F.col(name)))) for name in column_names}
     dataframe = dataframe.withColumns(column_dict)
@@ -73,8 +78,8 @@ def clean_products(bronze_products: DataFrame) -> DataFrame:
                                          "subcategory",
                                          "supplier_name")
     bronze_products = bronze_products.withColumns({
-        "unit_price": F.col("unit_price").try_cast("decimal(12,2)"),
-        "cost_price": F.col("cost_price").try_cast("decimal(12,2)"),
+        "unit_price": F.col("unit_price").cast("decimal(12,2)"),
+        "cost_price": F.col("cost_price").cast("decimal(12,2)"),
         "stock_quantity": F.col("stock_quantity").cast("int")
     })
 
@@ -115,7 +120,20 @@ def enrich_sales(orders: DataFrame, customers: DataFrame, products: DataFrame) -
         late_delivery_flag actual_delivery_date > promised_delivery_date
         order_month        date_format(order_timestamp, 'yyyy-MM')
     """
-    raise NotImplementedError
+
+    enriched_sales: DataFrame = (orders
+                                 .join(products.drop(*LINEAGE_COLUMNS), on="product_id")
+                                 .join(customers.drop(*LINEAGE_COLUMNS), on="customer_id"))
+    enriched_sales = enriched_sales.withColumn("gross_amount", F.col("quantity") * F.col("unit_price"))
+    enriched_sales = enriched_sales.withColumn("discount_amount", F.col("gross_amount") * F.col("discount_pct") / 100)
+    enriched_sales = enriched_sales.withColumn("net_amount", F.col("gross_amount") - F.col("discount_amount"))
+    enriched_sales = enriched_sales.withColumn("net_sales", F.col("net_amount"))
+    enriched_sales = enriched_sales.withColumn("profit_per_unit", F.col("unit_price") - F.col("cost_price"))
+    enriched_sales = enriched_sales.withColumn("delivery_days", F.datediff(F.col("actual_delivery_date"), F.col("order_timestamp")))
+    enriched_sales = enriched_sales.withColumn("late_delivery_flag", F.col("actual_delivery_date") > F.col("promised_delivery_date"))
+    enriched_sales = enriched_sales.withColumn("order_month", F.date_format(F.col("order_timestamp"), "yyyy-MM"))
+
+    return enriched_sales
 
 
 def main(mode: str | None = None) -> None:

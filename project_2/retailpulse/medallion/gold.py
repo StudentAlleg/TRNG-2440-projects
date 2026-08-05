@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import logging
 
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Window, WindowSpec
+from pyspark.sql import functions as F
 
 from ..config import load_config
 from ..session import cli, get_spark, save_all
@@ -25,12 +26,36 @@ def monthly_category_sales(enriched_sales: DataFrame) -> DataFrame:
     This is the table the Kafka events in Part E are built from, so it must
     carry: order_month, category, order_count, total_quantity, total_revenue.
     """
-    raise NotImplementedError
+    monthly_category_sales: DataFrame = enriched_sales.groupby(["category", "order_month"]).agg(
+        F.count("*").alias("order_count"),
+        F.sum("quantity").alias("total_quantity"),
+        F.sum("net_sales").alias("total_revenue"),
+        F.avg("net_sales").alias("avg_order_value"),
+        F.min("net_sales").alias("min_order_value"),
+        F.max("net_sales").alias("max_order_value"),
+    )
+
+    monthly_window: WindowSpec = (Window
+                                  .partitionBy("category")
+                                  .orderBy("order_month")
+                                  .rowsBetween(Window.unboundedPreceding, Window.currentRow))
+
+    monthly_category_sales = (monthly_category_sales
+                              .withColumn("running_total_revenue", F.sum("total_revenue").over(monthly_window)))
+
+
+    return monthly_category_sales
 
 
 def city_sales(enriched_sales: DataFrame) -> DataFrame:
     """B.14 -- revenue and order counts per city/state."""
-    raise NotImplementedError
+
+    city_sales: DataFrame = enriched_sales.groupby(["city", "state"]).agg(
+        F.count("*").alias("order_count"),
+        F.sum("net_sales").alias("total_revenue"),
+    )
+
+    return city_sales
 
 
 def customer_value(enriched_sales: DataFrame) -> DataFrame:
@@ -39,12 +64,56 @@ def customer_value(enriched_sales: DataFrame) -> DataFrame:
     Lifetime revenue per customer, their latest order (row_number over
     order_timestamp desc), and a dense_rank of customers within each state.
     """
-    raise NotImplementedError
+
+    customer_value: DataFrame = (enriched_sales
+    .groupby(["customer_id", "state"])
+    .agg(
+        F.sum("net_sales").alias("lifetime_revenue"),
+    ))
+
+    # order_id/order_timestamp are gone after the aggregation above, so the latest
+    # order has to come off the un-aggregated frame and be joined back on.
+    order_window: WindowSpec = (Window.partitionBy("customer_id")
+                                .orderBy(F.col("order_timestamp")
+                                         .desc()))
+
+    latest_order: DataFrame = (enriched_sales
+                               .withColumn("_row_number", F.row_number().over(order_window))
+                               .filter(F.col("_row_number") == 1)
+                               .select("customer_id", F.col("order_id").alias("latest_order")))
+
+    customer_rank_window: WindowSpec = (Window
+                                        .partitionBy("state")
+                                        .orderBy(F.col("lifetime_revenue")
+                                                 .desc()))
+
+    customer_value = (customer_value
+                      .join(latest_order, on="customer_id", how="left")
+                      .withColumn("state_rank", F.dense_rank().over(customer_rank_window)))
+
+    return customer_value
 
 
 def top_products_by_category(enriched_sales: DataFrame) -> DataFrame:
     """B.14, C.4 -- rank() products by revenue inside each category."""
-    raise NotImplementedError
+
+    top_products_by_category: DataFrame = enriched_sales.groupby(
+        ["category", "product_id", "product_name"]
+    ).agg(
+        F.count("*").alias("order_count"),
+        F.sum("quantity").alias("total_quantity"),
+        F.sum("net_sales").alias("total_revenue"),
+    )
+
+    product_rank_window: WindowSpec = (Window
+                                       .partitionBy("category")
+                                       .orderBy(F.col("total_revenue")
+                                                .desc()))
+
+    top_products_by_category = (top_products_by_category
+                                .withColumn("revenue_rank", F.rank().over(product_rank_window)))
+
+    return top_products_by_category
 
 
 def main(mode: str | None = None) -> None:
