@@ -1,0 +1,132 @@
+# Kafka (KRaft, no ZooKeeper) for Part E, plus Airflow for Part F.
+#
+#   docker compose up -d                      # Kafka only, what Part E needs
+#   docker compose --profile airflow up -d    # + Airflow at localhost:8080 (admin/admin)
+#   docker compose --profile airflow down -v
+#
+# Kafka is reachable from the host at localhost:9092 and from the Airflow
+# containers at kafka:29092.
+
+name: retailpulse
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.10.4-python3.12
+  profiles: [airflow]
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    # Extra providers plus this project's runtime deps, installed at container
+    # start. This reinstalls on every restart and databricks-connect is large.
+    # Once the DAG is stable, bake these into a Dockerfile FROM this image.
+    _PIP_ADDITIONAL_REQUIREMENTS: >-
+      apache-airflow-providers-databricks==6.13.0
+      databricks-connect==16.1.*
+      confluent-kafka==2.6.1
+      python-dotenv==1.0.1
+    # Consumed by the DAG's PythonOperators.
+    RETAILPULSE_MODE: databricks
+    RETAILPULSE_CATALOG: ${RETAILPULSE_CATALOG:-workspace}
+    RETAILPULSE_SCHEMA: ${RETAILPULSE_SCHEMA:-retail_fresher}
+    KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    KAFKA_TOPIC: ${KAFKA_TOPIC:-retail-sales-summary}
+    CONSUMED_EVENTS_PATH: /opt/airflow/project/output/consumed_events.jsonl
+    DATABRICKS_JOB_ID: ${DATABRICKS_JOB_ID}
+    # Databricks Connect authenticates from these.
+    DATABRICKS_HOST: ${DATABRICKS_HOST}
+    DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./retailpulse:/opt/airflow/project/retailpulse
+    - ./output:/opt/airflow/project/output
+    - ./airflow-logs:/opt/airflow/logs
+  user: "50000:0"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: retailpulse-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: RetailPulseKRaftCluster
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:29092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # Creates the topic explicitly so the producer log shows a real topic rather
+  # than an auto-created one. Exits after it runs.
+  kafka-init:
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: >
+      kafka-topics --bootstrap-server kafka:29092
+        --create --if-not-exists
+        --topic ${KAFKA_TOPIC:-retail-sales-summary}
+        --partitions 1 --replication-factor 1
+
+  # ------------------------------------------------------------ Part F
+  postgres:
+    image: postgres:16
+    profiles: [airflow]
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create --username admin --password admin \
+          --firstname Owen --lastname Peterson --role Admin --email admin@example.com || true
+        airflow connections add databricks_default \
+          --conn-type databricks \
+          --conn-host "$${DATABRICKS_HOST}" \
+          --conn-password "$${DATABRICKS_TOKEN}" || true
+    restart: on-failure
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: unless-stopped
+
+volumes:
+  airflow-db:

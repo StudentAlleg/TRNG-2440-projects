@@ -1,0 +1,12 @@
+# Databricks Connect environment  ->  python -m venv .venv-dbx
+# Python 3.12 (must match the Python minor version of your DBR / serverless runtime).
+#
+# Pin the major.minor to your workspace runtime:
+#   DBR 16.x  -> databricks-connect==16.1.*
+#   DBR 17.x  -> databricks-connect==17.0.*
+# `databricks-connect` bundles its own pyspark, so pyspark must NOT be installed here.
+python-dotenv==1.0.1
+confluent-kafka==2.6.1
+databricks-sdk==0.38.0
+
+databricks-connect==16.1.*
