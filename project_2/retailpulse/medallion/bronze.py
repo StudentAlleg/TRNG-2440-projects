@@ -1,4 +1,4 @@
-"""Part A -- Bronze layer: raw CSV -> Delta, every column left as a string.
+"""Part A. Bronze layer: raw CSV -> Delta, every column left as a string.
 
     python -m retailpulse.medallion.bronze
     python -m retailpulse.medallion.bronze --mode databricks
@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from pyspark.context import SparkContext
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.session import SparkSession

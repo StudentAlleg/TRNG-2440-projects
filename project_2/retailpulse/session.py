@@ -1,6 +1,6 @@
 """SparkSession construction, plus the two catalog calls shared by all layers.
 
-This is the only module that branches on the run mode.  Everything downstream
+This is the only module that branches on the run mode. Everything downstream
 receives a plain SparkSession and cannot tell the difference.
 """
 
@@ -43,7 +43,7 @@ def _local_session(cfg: RunConfig) -> SparkSession:
         )
         .config("spark.sql.warehouse.dir", cfg.local_warehouse.as_posix())
         .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={derby_home.as_posix()}")
-        # Keeps the local run quick and the shuffle files small for 500-row inputs.
+        # 500-row inputs don't need 200 shuffle partitions.
         .config("spark.sql.shuffle.partitions", "4")
         .config("spark.sql.session.timeZone", "UTC")
         .enableHiveSupport()
@@ -56,10 +56,9 @@ def _local_session(cfg: RunConfig) -> SparkSession:
 def _databricks_session() -> SparkSession:
     # Inside a Databricks notebook or job the runtime has already built the
     # session and databricks-connect is not installed, so reuse what's there.
-    # Only a remote client (this laptop) has to open a Connect session, and it
-    # has no active session on the first call -- which makes this the check,
-    # rather than sniffing at DATABRICKS_RUNTIME_VERSION, whose presence on
-    # serverless the docs do not actually promise.
+    # Only a remote client has to open a Connect session, and it has no active
+    # session on the first call. That makes this a better check than sniffing at
+    # DATABRICKS_RUNTIME_VERSION, which the docs don't promise on serverless.
     active = SparkSession.getActiveSession()
     if active is not None:
         return active
@@ -97,7 +96,7 @@ def save_all(cfg: RunConfig, tables: dict[str, DataFrame], logger: logging.Logge
 
 
 def cli(doc: str | None) -> str | None:
-    """Shared `--mode` entrypoint plumbing.  Pass the module's `__doc__`."""
+    """Shared `--mode` entrypoint plumbing. Pass the module's `__doc__`."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(description=(doc or "").strip().splitlines()[0])
     parser.add_argument("--mode", choices=["local", "databricks"], default=None)

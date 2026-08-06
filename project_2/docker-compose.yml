@@ -1,6 +1,6 @@
 # Kafka (KRaft, no ZooKeeper) for Part E, plus Airflow for Part F.
 #
-#   docker compose up -d                      # Kafka only -- what Part E needs
+#   docker compose up -d                      # Kafka only, what Part E needs
 #   docker compose --profile airflow up -d    # + Airflow at localhost:8080 (admin/admin)
 #   docker compose --profile airflow down -v
 #
@@ -17,9 +17,9 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
-    # Extra providers + this project's runtime deps, installed at container start.
-    # This reinstalls on every restart and databricks-connect is large -- once the
-    # DAG is stable, bake these into a Dockerfile FROM this image instead.
+    # Extra providers plus this project's runtime deps, installed at container
+    # start. This reinstalls on every restart and databricks-connect is large.
+    # Once the DAG is stable, bake these into a Dockerfile FROM this image.
     _PIP_ADDITIONAL_REQUIREMENTS: >-
       apache-airflow-providers-databricks==6.13.0
       databricks-connect==16.1.*
@@ -73,8 +73,8 @@ services:
       timeout: 10s
       retries: 10
 
-  # Creates the topic explicitly so the producer log shows a real topic, not an
-  # auto-created one.  Exits after it runs.
+  # Creates the topic explicitly so the producer log shows a real topic rather
+  # than an auto-created one. Exits after it runs.
   kafka-init:
     image: confluentinc/cp-kafka:7.7.1
     depends_on:

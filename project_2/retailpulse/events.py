@@ -1,4 +1,4 @@
-"""Part E -- turn Gold rows into sales-summary events.
+"""Part E. Turn Gold rows into sales-summary events.
 
 Kept free of Spark so the event shape can be unit-tested against plain dicts.
 """

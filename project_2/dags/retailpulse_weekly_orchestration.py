@@ -1,45 +1,25 @@
-"""Part F -- weekly orchestration.
-
-Required flow:
+"""Part F: weekly orchestration.
 
     Trigger Databricks Job -> Wait for Databricks completion -> Read Gold event
     rows -> Publish events to Kafka -> Consume a sample of events -> Finish
 
 Schedule `0 9 * * 3` (every Wednesday 09:00), catchup=False.
 
-Written with the TaskFlow API: `@dag` on the factory function, `@task` on each
-step.  A decorated function's name becomes its task_id, its return value is
-pushed to XCom automatically, and passing one call's result into another
-declares both the data flow and the dependency.  Edges that carry no data
-(the sensor -> read, publish -> consume) still use `>>`.
+Written with the TaskFlow API, so a decorated function's name becomes its
+task_id and its return value is pushed to XCom. Edges that carry no data still
+use `>>`.
 
-Notes on the six tasks:
+Two things worth knowing before editing this file:
 
-  trigger_databricks_job
-      DatabricksHook.run_now() rather than DatabricksRunNowOperator, so the run
-      id comes back as a plain return value and the wait stays its own node in
-      the graph.  The classic operator with wait_for_termination=False and
-      `.output` would work identically -- TaskFlow and classic operators mix
-      freely in one DAG.  Needs DATABRICKS_JOB_ID in the environment.
+  * apache-airflow-providers-databricks has no job-run sensor, only SQL and
+    partition sensors. There is no DatabricksJobRunSensor to import. Hence the
+    hook plus `@task.sensor`, which also keeps the wait as its own graph node.
+    Reschedule mode releases the worker slot between pokes, which matters on
+    LocalExecutor where a two-hour poke would hold a slot the whole time.
 
-  wait_for_databricks_completion
-      NOTE: apache-airflow-providers-databricks has no job-run sensor -- only
-      SQL and partition sensors. Don't go looking for DatabricksJobRunSensor.
-      `@task.sensor(mode="reschedule")` is the TaskFlow PythonSensor: poll
-      get_run_state() and return PokeReturnValue(is_done=...).  Reschedule mode
-      releases the worker slot between pokes, which matters on LocalExecutor
-      where a two-hour poke would otherwise hold a slot the whole time.
-
-  read_gold_event_rows / publish_events_to_kafka / consume_sample_events
-      Thin wrappers over retailpulse.kafka_io -- the same functions the CLI
-      calls, so a green DAG run and `python -m retailpulse.kafka_io publish`
-      exercise identical code.  Airflow does the Kafka work because the
-      Databricks workspace cannot reach a broker on this host; the broker is at
-      kafka:29092 from inside the container (already set as
-      KAFKA_BOOTSTRAP_SERVERS in docker-compose.yml).
-
-  finish
-      EmptyOperator -- nothing to run, so there is nothing to decorate.
+  * Airflow does the Kafka work rather than the Databricks job, because the
+    workspace cannot reach a broker on this host. Inside the container the
+    broker is kafka:29092, set as KAFKA_BOOTSTRAP_SERVERS in docker-compose.yml.
 """
 
 from __future__ import annotations
@@ -85,26 +65,34 @@ def retailpulse_weekly_orchestration():
         return run_id
 
     @task.sensor(poke_interval=60, timeout=timedelta(hours=2), mode="reschedule")
-    def wait_for_databricks_completion(run_id: int) -> PokeReturnValue:
-        """Poll the run until it reaches a terminal state; fail if unsuccessful."""
-        state = DatabricksHook(databricks_conn_id=DATABRICKS_CONN_ID).get_run_state(run_id)
-        log.info("run %s: %s (%s)", run_id, state.life_cycle_state, state.state_message)
+    def wait_for_databricks_completion(databricks_run_id: int) -> PokeReturnValue:
+        """Poll the run until it reaches a terminal state; fail if unsuccessful.
+
+        The argument is deliberately not called `run_id`. That name is a
+        reserved Airflow context key, and a task declaring it dies with "The key
+        'run_id' in args is a part of kwargs and therefore reserved" before the
+        body ever runs.
+        """
+        hook = DatabricksHook(databricks_conn_id=DATABRICKS_CONN_ID)
+        state = hook.get_run_state(databricks_run_id)
+        log.info(
+            "run %s: %s (%s)", databricks_run_id, state.life_cycle_state, state.state_message
+        )
 
         if not state.is_terminal:
             return PokeReturnValue(is_done=False)
         if not state.is_successful:
             # AirflowFailException, not AirflowException: a run that finished
-            # FAILED will not pass on a retry, so don't burn one polling again.
+            # FAILED won't pass on a retry, so don't burn one polling again.
             raise AirflowFailException(
-                f"Databricks run {run_id} finished {state.result_state}: {state.state_message}"
+                f"Databricks run {databricks_run_id} finished "
+                f"{state.result_state}: {state.state_message}"
             )
         return PokeReturnValue(is_done=True, xcom_value=state.result_state)
 
     @task
     def read_gold_event_rows() -> list[dict[str, Any]]:
-        """gold_monthly_category_sales -> Part E event payloads."""
-        # Imported here, not at module level: the scheduler re-parses this file
-        # every few seconds and the Spark/Databricks-Connect import is slow.
+        """Turn gold_monthly_category_sales rows into Part E event payloads."""
         from retailpulse.config import load_config
         from retailpulse.kafka_io import read_gold_events
 
@@ -138,8 +126,8 @@ def retailpulse_weekly_orchestration():
 
     finish = EmptyOperator(task_id="finish")
 
-    run_id = trigger_databricks_job()
-    waited = wait_for_databricks_completion(run_id)
+    databricks_run_id = trigger_databricks_job()
+    waited = wait_for_databricks_completion(databricks_run_id)
     events = read_gold_event_rows()
     published = publish_events_to_kafka(events)
     consumed = consume_sample_events()

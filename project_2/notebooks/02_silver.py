@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # RetailPulse -- Silver (Part B)
+# MAGIC # RetailPulse: Silver (Part B)
 # MAGIC
 # MAGIC Cleans, casts, deduplicates and enriches Bronze into `silver_customers`,
 # MAGIC `silver_products`, `silver_sales_orders` and `silver_enriched_sales`.
@@ -28,7 +28,7 @@ silver.main("databricks")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Rows in vs. rows out -- the validation report (Part B)
+# MAGIC ## Rows in vs rows out (Part B)
 # MAGIC Bronze count against Silver count per dataset; the difference is what the
 # MAGIC cleaning rules rejected.
 
@@ -53,7 +53,7 @@ silver.main("databricks")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Sample of the enriched join -- Part B.11, B.12
+# MAGIC ## Sample of the enriched join (Part B.11, B.12)
 
 # COMMAND ----------
 

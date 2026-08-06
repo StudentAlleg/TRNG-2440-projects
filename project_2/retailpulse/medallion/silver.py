@@ -1,8 +1,7 @@
-"""Part B -- Silver layer: clean, cast, deduplicate, enrich.
+"""Part B. Silver layer: clean, cast, deduplicate, enrich.
 
 Each function maps to a numbered requirement so the validation report can cite
-row counts in and out.  Implement them one at a time; a test that builds a
-5-row DataFrame and asserts on the result is the fastest way to prove each one.
+row counts in and out.
 
     python -m retailpulse.medallion.silver
 """
@@ -20,7 +19,7 @@ from ..session import cli, get_spark, save_all
 log = logging.getLogger("silver")
 
 # Bronze stamps these onto every table (A.6), so all three frames carry them into
-# the join.  Keep the order-level pair and drop the dimension copies.
+# the join. Keep the order-level pair and drop the dimension copies.
 LINEAGE_COLUMNS = ("source_file", "ingestion_timestamp")
 
 
@@ -28,10 +27,10 @@ def _try_cast(column_name: str, data_type: str) -> Column:
     """Cast a raw Bronze string, turning malformed values into NULL.
 
     Databricks enables ANSI SQL, where casting junk ('NA', '') to a number
-    raises CAST_INVALID_INPUT rather than returning NULL; local OSS Spark
-    defaults to ANSI off and returns NULL.  Every column cast here is filtered
-    on null or on a range immediately afterwards, so NULL is the behaviour we
-    want -- saying `try_cast` gets it from both engines instead of one.
+    raises CAST_INVALID_INPUT instead of returning NULL; local OSS Spark
+    defaults to ANSI off and returns NULL. Every column cast here is filtered on
+    null or on a range immediately afterwards, so `try_cast` gets the NULL
+    behaviour from both engines instead of one.
     """
     return F.expr(f"try_cast(`{column_name}` AS {data_type})")
 
@@ -45,10 +44,7 @@ def _normalize_strings(dataframe: DataFrame, *column_names: str) -> DataFrame:
 def clean_customers(bronze_customers: DataFrame) -> DataFrame:
     """B.2, B.3, B.4, B.5, B.6.
 
-    Trim strings, fill missing `city` with 'Unknown', cast `signup_date` /
-    `date_of_birth` to date and `updated_at` to timestamp, keep only the latest
-    row per `customer_id` via row_number() over updated_at desc, then drop
-    customers whose `is_active` is not 'Y'.
+    Only the row_number() dedupe and the is_active filter drop rows.
     """
     bronze_customers = bronze_customers.fillna({"city": "Unknown"})
     bronze_customers = _normalize_strings(bronze_customers, "customer_name",
@@ -80,9 +76,8 @@ def clean_customers(bronze_customers: DataFrame) -> DataFrame:
 def clean_products(bronze_products: DataFrame) -> DataFrame:
     """B.2, B.4, B.7, B.8.
 
-    Trim/standardise case, cast `unit_price` and `cost_price` to decimal(12,2)
-    and `stock_quantity` to int, drop rows where either price is null or <= 0
-    or cost > price, then drop rows whose `active_flag` is not 'Y'.
+    A product is invalid if either price is missing, non-positive, or the cost
+    exceeds the price.
     """
     bronze_products = _normalize_strings(bronze_products,
                                          "product_name",
@@ -104,9 +99,7 @@ def clean_products(bronze_products: DataFrame) -> DataFrame:
 def clean_orders(bronze_orders: DataFrame) -> DataFrame:
     """B.2, B.4, B.9, B.10.
 
-    Cast `order_timestamp` to timestamp, delivery dates to date, `quantity` to
-    int and `discount_pct` to decimal, drop quantity <= 0, then exclude
-    PENDING and CANCELLED orders.
+    PENDING and CANCELLED orders are excluded from financial analysis.
     """
     bronze_orders = bronze_orders.withColumns({
         "order_timestamp": _try_cast("order_timestamp", "timestamp"),
@@ -121,7 +114,7 @@ def clean_orders(bronze_orders: DataFrame) -> DataFrame:
 
 
 def enrich_sales(orders: DataFrame, customers: DataFrame, products: DataFrame) -> DataFrame:
-    """B.11, B.12 -- join the three cleaned frames and add derived columns.
+    """B.11, B.12. Join the three cleaned frames and add derived columns.
 
         gross_amount       quantity * unit_price
         discount_amount    gross_amount * discount_pct / 100

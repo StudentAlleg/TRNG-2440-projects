@@ -11,9 +11,6 @@ metastore_db/
 derby.log
 spark-warehouse/
 
-# pipeline output
-output/
-*.jsonl
 
 # airflow
 airflow-logs/

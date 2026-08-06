@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # RetailPulse -- Gold (Part B.14 and Part C)
+# MAGIC # RetailPulse: Gold (Part B.14 and Part C)
 # MAGIC
 # MAGIC Builds the four analytical tables, including the window functions:
 # MAGIC `row_number()` for the latest customer profile, `rank()` for top products
@@ -29,8 +29,8 @@ gold.main("databricks")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Monthly category sales + running total -- C.1, C.2, C.6
-# MAGIC These rows are exactly what the Kafka producer publishes.
+# MAGIC ## Monthly category sales and running total (C.1, C.2, C.6)
+# MAGIC These rows are what the Kafka producer publishes.
 
 # COMMAND ----------
 
@@ -43,7 +43,7 @@ gold.main("databricks")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Top products by category -- C.4 (`rank()`)
+# MAGIC ## Top products by category, C.4 (`rank()`)
 
 # COMMAND ----------
 
@@ -56,7 +56,7 @@ gold.main("databricks")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Customers within each state -- C.5 (`dense_rank()`) and C.7 (latest order)
+# MAGIC ## Customers within each state, C.5 (`dense_rank()`) and C.7 (latest order)
 
 # COMMAND ----------
 

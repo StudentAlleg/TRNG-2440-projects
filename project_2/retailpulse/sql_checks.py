@@ -1,4 +1,4 @@
-"""Part D -- run the Spark SQL scripts and compare them to the PySpark Gold tables.
+"""Part D. Run the Spark SQL scripts and compare them to the PySpark Gold tables.
 
 Every .sql file in sql/ is executed with `{catalog}` / `{schema}` substituted,
 then the reconciliation queries in sql/checks/ must return zero rows.

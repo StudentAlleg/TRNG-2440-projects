@@ -1,4 +1,4 @@
-"""Part E -- Kafka producer and consumer.
+"""Part E. Kafka producer and consumer.
 
 Both run on your machine in either mode: Databricks Free Edition cannot reach a
 broker on localhost, so events are always published from the local process
@@ -27,7 +27,7 @@ EVENT_COLUMNS = ["order_month", "category", "order_count", "total_quantity", "to
 
 
 def publish_events(cfg: RunConfig, events: Iterable[dict[str, Any]]) -> int:
-    """Publish events keyed by `event_id`.  Returns the delivered count."""
+    """Publish events keyed by `event_id`. Returns the delivered count."""
     producer = Producer({"bootstrap.servers": cfg.kafka_bootstrap})
     delivered = 0
     failed: list[str] = []
@@ -98,7 +98,7 @@ def consume_events(cfg: RunConfig, max_messages: int | None = None, timeout: flo
 
 
 def read_gold_events(cfg: RunConfig) -> list[dict[str, Any]]:
-    """Gold monthly-category rows -> event payloads.  Needs a Spark session."""
+    """Gold monthly-category rows -> event payloads. Needs a Spark session."""
     from .session import get_spark
 
     rows = (

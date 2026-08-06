@@ -1,4 +1,4 @@
-"""Parts B.14 and C -- Gold analytical tables and window functions.
+"""Parts B.14 and C. Gold analytical tables and window functions.
 
     python -m retailpulse.medallion.gold
 """
@@ -19,12 +19,8 @@ log = logging.getLogger("gold")
 def monthly_category_sales(enriched_sales: DataFrame) -> DataFrame:
     """B.14, C.1, C.2, C.6.
 
-    Group by `category` and `order_month`; emit order_count, total_quantity,
-    total_revenue plus avg/min/max order value, and a running revenue total
-    per category ordered by month (sum over a rows-unbounded-preceding window).
-
-    This is the table the Kafka events in Part E are built from, so it must
-    carry: order_month, category, order_count, total_quantity, total_revenue.
+    Part E builds its Kafka events from this table, so it has to keep
+    order_month, category, order_count, total_quantity and total_revenue.
     """
     monthly_category_sales: DataFrame = enriched_sales.groupby(["category", "order_month"]).agg(
         F.count("*").alias("order_count"),
@@ -48,7 +44,7 @@ def monthly_category_sales(enriched_sales: DataFrame) -> DataFrame:
 
 
 def city_sales(enriched_sales: DataFrame) -> DataFrame:
-    """B.14 -- revenue and order counts per city/state."""
+    """B.14. Revenue and order counts per city/state."""
 
     city_sales: DataFrame = enriched_sales.groupby(["city", "state"]).agg(
         F.count("*").alias("order_count"),
@@ -61,8 +57,8 @@ def city_sales(enriched_sales: DataFrame) -> DataFrame:
 def customer_value(enriched_sales: DataFrame) -> DataFrame:
     """B.14, C.5, C.7.
 
-    Lifetime revenue per customer, their latest order (row_number over
-    order_timestamp desc), and a dense_rank of customers within each state.
+    Lifetime revenue per customer, their latest order, and a dense_rank of
+    customers within each state.
     """
 
     customer_value: DataFrame = (enriched_sales
@@ -95,7 +91,7 @@ def customer_value(enriched_sales: DataFrame) -> DataFrame:
 
 
 def top_products_by_category(enriched_sales: DataFrame) -> DataFrame:
-    """B.14, C.4 -- rank() products by revenue inside each category."""
+    """B.14, C.4. Rank products by revenue inside each category."""
 
     top_products_by_category: DataFrame = enriched_sales.groupby(
         ["category", "product_id", "product_name"]

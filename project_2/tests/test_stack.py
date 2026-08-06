@@ -1,11 +1,7 @@
-"""Smoke test: proves local Spark + Delta + the table read/write path work.
+"""Smoke test: local Spark, Delta and the table read/write path.
 
-Run this before writing any transforms -- if it passes, the stack is sound and
-every later failure is your logic, not your environment.
-
-Add your own tests alongside it: the layer functions take DataFrames and return
-DataFrames, so you can build a 5-row input with spark.createDataFrame() and
-assert on the result without touching a CSV.
+If this passes, the stack is sound and every later failure is logic rather than
+environment.
 """
 
 from retailpulse.config import RAW_FILES

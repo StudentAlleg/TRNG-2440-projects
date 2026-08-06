@@ -1,6 +1,6 @@
 """Session-scoped local Spark fixture.
 
-Tests always run in local mode -- they never touch the workspace.
+Tests always run in local mode and never touch the workspace.
 """
 
 import shutil
@@ -17,7 +17,7 @@ from retailpulse.session import get_spark
 def cfg(tmp_path_factory) -> RunConfig:
     """A local RunConfig writing to a throwaway warehouse, in its own schema.
 
-    Built by hand rather than via load_config() so a stray .env can't point the
+    Built by hand rather than via load_config() so a stray .env cannot point the
     tests at the workspace.
     """
     warehouse = tmp_path_factory.mktemp("warehouse")
